@@ -108,6 +108,9 @@ class ZerodhaService:
 
         return self._get_client()
 
+    def invalidate_session(self):
+        self._clear_access_token()
+
     @property
     def is_authenticated(self) -> bool:
         return self._access_token is not None

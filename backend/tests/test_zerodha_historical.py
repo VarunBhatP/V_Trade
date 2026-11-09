@@ -261,3 +261,57 @@ def test_multiple_matching_equity_instruments_are_rejected(fake_kite):
 
     with pytest.raises(ValueError, match="Multiple matching"):
         provider._get_instrument_token("NSE", "RELIANCE")
+
+from kiteconnect.exceptions import TokenException
+
+
+def test_expired_token_invalidates_session(fake_kite, monkeypatch):
+    invalidated = []
+
+    monkeypatch.setattr(
+        historical_module.zerodha_service,
+        "invalidate_session",
+        lambda: invalidated.append(True),
+    )
+
+    fake_kite.historical_data = lambda **kwargs: (
+        _ for _ in ()
+    ).throw(TokenException("Token expired"))
+
+    provider = ZerodhaHistoricalProvider()
+
+    with pytest.raises(RuntimeError, match="session expired"):
+        provider.fetch_daily(
+            exchange="NSE",
+            symbol="RELIANCE",
+            start_date=date(2026, 11, 5),
+            end_date=date(2026, 11, 6),
+        )
+
+    assert invalidated == [True]
+
+
+def test_network_error_does_not_invalidate_session(fake_kite, monkeypatch):
+    invalidated = []
+
+    monkeypatch.setattr(
+        historical_module.zerodha_service,
+        "invalidate_session",
+        lambda: invalidated.append(True),
+    )
+
+    fake_kite.historical_data = lambda **kwargs: (
+        _ for _ in ()
+    ).throw(ConnectionError("Network unavailable"))
+
+    provider = ZerodhaHistoricalProvider()
+
+    with pytest.raises(ConnectionError, match="Network unavailable"):
+        provider.fetch_daily(
+            exchange="NSE",
+            symbol="RELIANCE",
+            start_date=date(2026, 11, 5),
+            end_date=date(2026, 11, 6),
+        )
+
+    assert invalidated == []

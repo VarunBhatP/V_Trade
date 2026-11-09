@@ -1,0 +1,3 @@
+exchange,symbol,company_name,isin,yahoo_symbol,status,error,exclusion_reason
+NSE,BAGMANE,Bagmane Prime Office REIT,INE2OVN25015,BAGMANE.NS,ERROR,"$BAGMANE.NS: No data found, symbol may be delisted","Yahoo returned no data; genuine security, excluded from Yahoo-backed universe."
+NSE,DUMMYHEG,Dummy HEG Ltd.,DUM545A01024,DUMMYHEG.NS,ERROR,HTTP Error 404: ,"Placeholder-like, unverified constituent record; excluded pending verification."

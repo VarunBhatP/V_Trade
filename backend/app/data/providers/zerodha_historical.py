@@ -1,7 +1,7 @@
 
 from datetime import date, datetime, time
 import logging
-
+from kiteconnect import exceptions as kite_exceptions
 import numpy as np
 import pandas as pd
 
@@ -12,6 +12,14 @@ logger = logging.getLogger(__name__)
 
 OHLCV_COLUMNS = ["date", "open", "high", "low", "close", "volume"]
 
+def _call_kite_api(method, *args, **kwargs):
+    try:
+        return method(*args, **kwargs)
+    except kite_exceptions.TokenException:
+        zerodha_service.invalidate_session()
+        raise RuntimeError(
+            "Zerodha session expired. Please log in again."
+        ) from None
 
 class ZerodhaHistoricalProvider:
 
@@ -27,7 +35,7 @@ class ZerodhaHistoricalProvider:
             return cached["instruments"]
 
         kite = zerodha_service.get_authenticated_client()
-        instruments = kite.instruments(exchange)
+        instruments = _call_kite_api(kite.instruments, exchange)
 
         self._instrument_cache[exchange] = {
             "date": today,
@@ -83,7 +91,8 @@ class ZerodhaHistoricalProvider:
 
         kite = zerodha_service.get_authenticated_client()
 
-        records = kite.historical_data(
+        records = _call_kite_api(
+            kite.historical_data,
             instrument_token=token,
             from_date=datetime.combine(start_date, time.min),
             to_date=datetime.combine(end_date, time.max),
